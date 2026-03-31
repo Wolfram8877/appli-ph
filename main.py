@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 import joblib
 import os
+from urllib.parse import urlparse
 
 # Création du dossier temporaire pour les images du téléphone
 if not os.path.exists("uploads"):
@@ -63,15 +64,22 @@ def main(page: ft.Page):
             texte_resultat.value = "Envoi de la photo au serveur..."
             page.update()
             
-            # 1. On récupère le lien d'upload généré par Flet
-            lien_upload = page.get_upload_url(e.files[0].name, 60)
+            # 1. Le lien buggé généré par le serveur (ex: http://0.0.0.0:8000/upload/...)
+            lien_original = page.get_upload_url(e.files[0].name, 60)
             
-            # 2. L'ASTUCE CLOUD : On force le lien en HTTPS sécurisé
-            lien_upload = lien_upload.replace("http://", "https://")
+            # 2. On découpe ce lien pour ne garder que la partie utile (le chemin et le code secret)
+            chemin = urlparse(lien_original).path
+            signature = urlparse(lien_original).query
             
-            # 3. On lance l'envoi avec le bon lien
+            # 3. On récupère la VRAIE adresse publique de ton site (ex: https://ton-app.onrender.com)
+            domaine_public = page.url.split('/#')[0].strip('/')
+            
+            # 4. On recolle les morceaux pour fabriquer le lien parfait
+            lien_parfait = f"{domaine_public}{chemin}?{signature}"
+            
+            # 5. On lance l'envoi !
             selecteur.upload([
-                ft.FilePickerUploadFile(e.files[0].name, upload_url=lien_upload)
+                ft.FilePickerUploadFile(e.files[0].name, upload_url=lien_parfait)
             ])
 
     selecteur = ft.FilePicker()
