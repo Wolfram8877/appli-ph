@@ -62,8 +62,16 @@ def main(page: ft.Page):
         if e.files:
             texte_resultat.value = "Envoi de la photo au serveur..."
             page.update()
+            
+            # 1. On récupère le lien d'upload généré par Flet
+            lien_upload = page.get_upload_url(e.files[0].name, 60)
+            
+            # 2. L'ASTUCE CLOUD : On force le lien en HTTPS sécurisé
+            lien_upload = lien_upload.replace("http://", "https://")
+            
+            # 3. On lance l'envoi avec le bon lien
             selecteur.upload([
-                ft.FilePickerUploadFile(e.files[0].name, upload_url=page.get_upload_url(e.files[0].name, 60))
+                ft.FilePickerUploadFile(e.files[0].name, upload_url=lien_upload)
             ])
 
     selecteur = ft.FilePicker()
