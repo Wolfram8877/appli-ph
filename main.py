@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 import base64
 
 # Mot de passe Flet
-os.environ["FLET_SECRET_KEY"] = ""
+os.environ["FLET_SECRET_KEY"] = "super_cle_secrete_ph_123"
 
 # Création du dossier temporaire pour les images du téléphone
 if not os.path.exists("uploads"):
