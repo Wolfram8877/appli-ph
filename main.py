@@ -65,33 +65,28 @@ def main(page: ft.Page):
     def on_result(e: ft.FilePickerResultEvent):
         if e.files:
             try:
-                # 1. Le lien buggé généré par le serveur
+                # 1. Le lien d'origine généré par Flet
                 lien_original = page.get_upload_url(e.files[0].name, 60)
                 
-                # 2. On découpe pour garder le chemin (/upload/...) et la signature
+                # 2. On découpe l'URL
                 from urllib.parse import urlparse
-                chemin = urlparse(lien_original).path
-                signature = urlparse(lien_original).query
+                parsed = urlparse(lien_original)
                 
-                # 3. LE NETTOYAGE EXTRÊME : On récupère juste le domaine (sans http ni slash)
-                url_brute = page.url.split('/#')[0]
-                domaine_propre = url_brute.replace('http://', '').replace('https://', '').strip('/')
+                # 3. L'ASTUCE MAGIQUE : On garde UNIQUEMENT la fin du chemin (ex: /upload/xyz?signature=123)
+                # On ne met ni http, ni https, ni adresse de site !
+                lien_relatif = f"{parsed.path}?{parsed.query}"
                 
-                # 4. ON FORCE LE HTTPS !
-                lien_parfait = f"https://{domaine_propre}{chemin}?{signature}"
-                
-                # On affiche sur le téléphone ce qu'on essaie de faire
-                texte_resultat.value = "Envoi HTTPS en cours..."
+                texte_resultat.value = "Envoi de l'image..."
                 texte_resultat.color = "blue"
                 page.update()
                 
-                # 5. On lance l'envoi avec le lien blindé
+                # 4. On lance l'envoi avec ce chemin relatif
                 selecteur.upload([
-                    ft.FilePickerUploadFile(e.files[0].name, upload_url=lien_parfait)
+                    ft.FilePickerUploadFile(e.files[0].name, upload_url=lien_relatif)
                 ])
                 
             except Exception as err:
-                texte_resultat.value = f"Erreur de lien : {err}"
+                texte_resultat.value = f"Erreur : {err}"
                 texte_resultat.color = "red"
                 page.update()
 
