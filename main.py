@@ -6,7 +6,7 @@ import os
 from urllib.parse import urlparse
 import base64
 
-# Mot de passe Flet
+#Mot de passe
 os.environ["FLET_SECRET_KEY"] = "super_cle_secrete_ph_123"
 
 # Création du dossier temporaire pour les images du téléphone
@@ -18,18 +18,12 @@ modele_ph = joblib.load('modele_knn_ph.pkl')
 
 def recadrer_image(chemin_image):
     image = Image.open(chemin_image).convert('RGB')
-    
-    img_array = np.array(image, dtype=np.int16)
-    diff = img_array.max(axis=-1) - img_array.min(axis=-1)
-    y_coords, x_coords = np.where(diff > 100)
-    
-    if len(x_coords) > 0 and len(y_coords) > 0:
-        centre_x = int((x_coords.min() + x_coords.max()) / 2)
-        centre_y = int((y_coords.min() + y_coords.max()) / 2)
-    else:
-        l, h = image.size
-        centre_x, centre_y = l // 2, h // 2
-        
+    pixels = image.load()
+    l, h = image.size
+    x_min, x_max, y_min, y_max = l, 0, h, 0
+    seuil = 100 
+
+    centre_x, centre_y = int((x_min + x_max) / 2), int((y_min + y_max) / 2)
     return image.crop((centre_x - 100, centre_y - 150, centre_x + 100, centre_y + 150))
 
 def calculer_ph(image_decoupee):
@@ -46,14 +40,15 @@ def main(page: ft.Page):
     texte_resultat = ft.Text("En attente d'une photo...", size=20)
     conteneur_image = ft.Container(width=300, height=300, border=ft.border.all(1, "grey"), border_radius=10)
 
-    # La fonction d'upload de Flet (inchangée)
-    def on_upload(e):
+    def on_upload(e: ft.FilePickerUploadEvent):
         if e.progress == 1.0: 
             chemin_fichier = os.path.join("uploads", e.file_name)
             
+            # L'ASTUCE BASE64 : On lit l'image et on la convertit en texte
             with open(chemin_fichier, "rb") as image_file:
                 code_image = base64.b64encode(image_file.read()).decode('utf-8')
             
+            # On l'affiche direct sans passer par un lien !
             conteneur_image.content = ft.Image(src_base64=code_image, width=300, height=300, fit="contain")
             texte_resultat.value = "Analyse IA en cours..."
             page.update()
@@ -68,31 +63,27 @@ def main(page: ft.Page):
                 texte_resultat.color = "red"
             page.update()
 
-    selecteur = ft.FilePicker()
-    selecteur.on_upload = on_upload
-    page.overlay.append(selecteur)
-
-    # LA NOUVELLE MAGIE FLET : Tout se passe directement ici !
-    async def au_clic_bouton(e):
-        # 1. On ouvre l'appareil photo et on attend le résultat (plus de 'on_result' !)
-        files = await selecteur.pick_files(allow_multiple=False, file_type=ft.FilePickerFileType.IMAGE)
-        
-        # 2. Si l'utilisateur a bien pris une photo (et n'a pas annulé)
-        if files:
+    def on_result(e: ft.FilePickerResultEvent):
+        if e.files:
             try:
-                fichier = files[0]
-                lien_original = page.get_upload_url(fichier.name, 60)
+                # 1. Le lien d'origine généré par Flet
+                lien_original = page.get_upload_url(e.files[0].name, 60)
+                
+                # 2. On découpe l'URL
                 from urllib.parse import urlparse
                 parsed = urlparse(lien_original)
+                
+                # 3. L'ASTUCE MAGIQUE : On garde UNIQUEMENT la fin du chemin (ex: /upload/xyz?signature=123)
+                # On ne met ni http, ni https, ni adresse de site !
                 lien_relatif = f"{parsed.path}?{parsed.query}"
                 
                 texte_resultat.value = "Envoi de l'image..."
                 texte_resultat.color = "blue"
                 page.update()
                 
-                # 3. On lance l'envoi au serveur
-                await selecteur.upload([
-                    ft.FilePickerUploadFile(fichier.name, upload_url=lien_relatif)
+                # 4. On lance l'envoi avec ce chemin relatif
+                selecteur.upload([
+                    ft.FilePickerUploadFile(e.files[0].name, upload_url=lien_relatif)
                 ])
                 
             except Exception as err:
@@ -100,9 +91,16 @@ def main(page: ft.Page):
                 texte_resultat.color = "red"
                 page.update()
 
-    bouton = ft.ElevatedButton("Prendre une photo", on_click=au_clic_bouton)
+    selecteur = ft.FilePicker()
+    selecteur.on_result = on_result
+    selecteur.on_upload = on_upload
+    page.overlay.append(selecteur)
+
+    bouton = ft.ElevatedButton("Prendre une photo", on_click=lambda _: selecteur.pick_files())
 
     page.add(titre, bouton, conteneur_image, texte_resultat)
 
+# LA LIGNE CLÉ POUR LE CLOUD RENDER :
+# On récupère le port donné par Render, sinon on utilise 8000 par défaut
 port = int(os.environ.get("PORT", 8000))
 ft.app(target=main, host="0.0.0.0", port=port, upload_dir="uploads")
