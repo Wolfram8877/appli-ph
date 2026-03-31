@@ -1,4 +1,4 @@
-flet==0.28.2
+flet
 numpy
 Pillow
 scikit-learn==1.6.1
