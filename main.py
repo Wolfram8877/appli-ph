@@ -66,7 +66,9 @@ def main(page: ft.Page):
                 ft.FilePickerUploadFile(e.files[0].name, upload_url=page.get_upload_url(e.files[0].name, 60))
             ])
 
-    selecteur = ft.FilePicker(on_result=on_result, on_upload=on_upload)
+    selecteur = ft.FilePicker()
+    selecteur.on_result = on_result
+    selecteur.on_upload = on_upload
     page.overlay.append(selecteur)
 
     bouton = ft.ElevatedButton("Prendre une photo", on_click=lambda _: selecteur.pick_files())
