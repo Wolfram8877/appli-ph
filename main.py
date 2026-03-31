@@ -140,4 +140,24 @@ def main(page: ft.Page):
                 page.update()
                 
                 selecteur.upload([
-                    ft.FilePickerUploadFile(
+                    ft.FilePickerUploadFile(e.files[0].name, upload_url=lien_relatif)
+                ])
+                
+            except Exception as err:
+                texte_resultat_knn.value = f"Erreur : {err}"
+                texte_resultat_knn.color = "red"
+                page.update()
+
+    selecteur = ft.FilePicker()
+    selecteur.on_result = on_result
+    selecteur.on_upload = on_upload
+    page.overlay.append(selecteur)
+
+    bouton = ft.ElevatedButton("Prendre une photo", on_click=lambda _: selecteur.pick_files())
+
+    # ON AJOUTE LES 4 TEXTES A LA PAGE ICI
+    page.add(titre, bouton, conteneur_image, texte_resultat_knn, texte_resultat_vectors, texte_resultat_RFR, texte_resultat_DTR)
+
+# LA LIGNE CLÉ POUR LE CLOUD RENDER :
+port = int(os.environ.get("PORT", 8000))
+ft.app(target=main, host="0.0.0.0", port=port, upload_dir="uploads")
