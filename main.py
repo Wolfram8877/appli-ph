@@ -1,10 +1,11 @@
 import flet as ft
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw  # <-- AJOUT DE ImageDraw
 import joblib
 import os
 from urllib.parse import urlparse
 import base64
+import io  # <-- AJOUT DE io POUR LE DESSIN EN MEMOIRE
 
 # Mot de passe Flet
 os.environ["FLET_SECRET_KEY"] = "super_cle_secrete_ph_123"
@@ -18,11 +19,9 @@ print("Chargement des IA sur le serveur...")
 modele_knn = joblib.load('modele_knn_ph.pkl')
 modele_vectors = joblib.load('modele_vectors_ph.pkl') 
 
-# Cropping de l'image a centre (200x300 pixels)
-def recadrer_image(chemin_image): 
-    image = Image.open(chemin_image).convert('RGB')
-    
-    img_array = np.array(image, dtype=np.int16)
+# --- FONCTION POUR TROUVER LE CENTRE ---
+def trouver_centre(image_pil):
+    img_array = np.array(image_pil.convert('RGB'), dtype=np.int16)
     diff = img_array.max(axis=-1) - img_array.min(axis=-1)
     y_coords, x_coords = np.where(diff > 100)
     
@@ -30,10 +29,13 @@ def recadrer_image(chemin_image):
         centre_x = int((x_coords.min() + x_coords.max()) / 2)
         centre_y = int((y_coords.min() + y_coords.max()) / 2)
     else:
-        l, h = image.size
+        l, h = image_pil.size
         centre_x, centre_y = l // 2, h // 2
-        
-    return image.crop((centre_x - 100, centre_y - 150, centre_x + 100, centre_y + 150))
+    return centre_x, centre_y
+
+# Cropping de l'image a centre (200x300 pixels)
+def recadrer_image(image_pil, centre_x, centre_y): 
+    return image_pil.convert('RGB').crop((centre_x - 100, centre_y - 150, centre_x + 100, centre_y + 150))
 
 def calculer_ph(image_decoupee):
     image_numpy = np.array(image_decoupee)
@@ -63,8 +65,21 @@ def main(page: ft.Page):
         if e.progress == 1.0: 
             chemin_fichier = os.path.join("uploads", e.file_name)
             
-            with open(chemin_fichier, "rb") as image_file:
-                code_image = base64.b64encode(image_file.read()).decode('utf-8')
+            # --- DEBUT DE LA MODIFICATION POUR LE RECTANGLE ---
+            original_image = Image.open(chemin_fichier)
+            cx, cy = trouver_centre(original_image)
+            
+            original_image_editable = original_image.copy()
+            draw = ImageDraw.Draw(original_image_editable)
+            
+            coordonnees_boite = (cx - 100, cy - 150, cx + 100, cy + 150)
+            # Epaisseur de 5 pixels, couleur rouge pour bien contraster avec la bandelette
+            draw.rectangle(coordonnees_boite, outline="red", width=5)
+            
+            buffer_img = io.BytesIO()
+            original_image_editable.save(buffer_img, format="PNG")
+            code_image = base64.b64encode(buffer_img.getvalue()).decode('utf-8')
+            # --- FIN DE LA MODIFICATION ---
             
             conteneur_image.content = ft.Image(src_base64=code_image, width=300, height=300, fit="contain")
             texte_resultat_knn.value = "Analyse en cours..."
@@ -72,7 +87,8 @@ def main(page: ft.Page):
             page.update()
 
             try:
-                img = recadrer_image(chemin_fichier)
+                # On utilise la photo originale (sans le dessin) pour l'IA
+                img = recadrer_image(original_image, cx, cy)
                 
                 # On récupère nos deux calculs
                 ph_knn, ph_vectors = calculer_ph(img)
@@ -121,5 +137,6 @@ def main(page: ft.Page):
 
     page.add(titre, bouton, conteneur_image, texte_resultat_knn, texte_resultat_vectors)
 
+# LA LIGNE CLÉ POUR LE CLOUD RENDER :
 port = int(os.environ.get("PORT", 8000))
 ft.app(target=main, host="0.0.0.0", port=port, upload_dir="uploads")
