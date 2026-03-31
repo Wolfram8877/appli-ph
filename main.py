@@ -19,7 +19,6 @@ modele_ph = joblib.load('modele_knn_ph.pkl')
 def recadrer_image(chemin_image):
     image = Image.open(chemin_image).convert('RGB')
     
-    # Version ultra-rapide avec NumPy (0.1 seconde contre 15 secondes avant !)
     img_array = np.array(image, dtype=np.int16)
     diff = img_array.max(axis=-1) - img_array.min(axis=-1)
     y_coords, x_coords = np.where(diff > 100)
@@ -47,11 +46,11 @@ def main(page: ft.Page):
     texte_resultat = ft.Text("En attente d'une photo...", size=20)
     conteneur_image = ft.Container(width=300, height=300, border=ft.border.all(1, "grey"), border_radius=10)
 
-    def on_upload(e: ft.FilePickerUploadEvent):
+    # La fonction d'upload de Flet (inchangée)
+    def on_upload(e):
         if e.progress == 1.0: 
             chemin_fichier = os.path.join("uploads", e.file_name)
             
-            # L'ASTUCE BASE64 : Affichage instantané et garanti de l'image
             with open(chemin_fichier, "rb") as image_file:
                 code_image = base64.b64encode(image_file.read()).decode('utf-8')
             
@@ -69,22 +68,31 @@ def main(page: ft.Page):
                 texte_resultat.color = "red"
             page.update()
 
-    def on_result(e: ft.FilePickerResultEvent):
-        if e.files:
+    selecteur = ft.FilePicker()
+    selecteur.on_upload = on_upload
+    page.overlay.append(selecteur)
+
+    # LA NOUVELLE MAGIE FLET : Tout se passe directement ici !
+    async def au_clic_bouton(e):
+        # 1. On ouvre l'appareil photo et on attend le résultat (plus de 'on_result' !)
+        files = await selecteur.pick_files(allow_multiple=False, file_type=ft.FilePickerFileType.IMAGE)
+        
+        # 2. Si l'utilisateur a bien pris une photo (et n'a pas annulé)
+        if files:
             try:
-                lien_original = page.get_upload_url(e.files[0].name, 60)
+                fichier = files[0]
+                lien_original = page.get_upload_url(fichier.name, 60)
                 from urllib.parse import urlparse
                 parsed = urlparse(lien_original)
-                
-                # L'URL relative parfaite pour éviter les blocages de sécurité
                 lien_relatif = f"{parsed.path}?{parsed.query}"
                 
                 texte_resultat.value = "Envoi de l'image..."
                 texte_resultat.color = "blue"
                 page.update()
                 
-                selecteur.upload([
-                    ft.FilePickerUploadFile(e.files[0].name, upload_url=lien_relatif)
+                # 3. On lance l'envoi au serveur
+                await selecteur.upload([
+                    ft.FilePickerUploadFile(fichier.name, upload_url=lien_relatif)
                 ])
                 
             except Exception as err:
@@ -92,16 +100,7 @@ def main(page: ft.Page):
                 texte_resultat.color = "red"
                 page.update()
 
-    selecteur = ft.FilePicker()
-    selecteur.on_result = on_result
-    selecteur.on_upload = on_upload
-    page.overlay.append(selecteur)
-
-    # LA CORRECTION CLÉ POUR IOS : allow_multiple=False, file_type=ft.FilePickerFileType.IMAGE
-    bouton = ft.ElevatedButton(
-        "Prendre une photo", 
-        on_click=lambda _: selecteur.pick_files(allow_multiple=False, file_type=ft.FilePickerFileType.IMAGE)
-    )
+    bouton = ft.ElevatedButton("Prendre une photo", on_click=au_clic_bouton)
 
     page.add(titre, bouton, conteneur_image, texte_resultat)
 
