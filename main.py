@@ -104,4 +104,4 @@ def main(page: ft.Page):
 # LA LIGNE CLÉ POUR LE CLOUD RENDER :
 # On récupère le port donné par Render, sinon on utilise 8000 par défaut
 port = int(os.environ.get("PORT", 8000))
-ft.app(target=main, host="0.0.0.0", port=port, upload_dir="uploads")
+ft.app(target=main, host="0.0.0.0", port=port, upload_dir="uploads", secret_key="super_cle_secrete_ph_123")
