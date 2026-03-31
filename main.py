@@ -14,14 +14,14 @@ if not os.path.exists("uploads"):
     os.makedirs("uploads")
 
 print("Chargement des IA sur le serveur...")
-# 1. On charge les DEUX cerveaux
+# On charge les modèles d'IA entrainés
 modele_knn = joblib.load('modele_knn_ph.pkl')
-modele_vectors = joblib.load('modele_vectors_ph.pkl') # <-- MODIFIE LE NOM SI BESOIN
+modele_vectors = joblib.load('modele_vectors_ph.pkl') 
 
-def recadrer_image(chemin_image):
+# Cropping de l'image a centre (200x300 pixels)
+def recadrer_image(chemin_image): 
     image = Image.open(chemin_image).convert('RGB')
     
-    # Version ultra-rapide avec NumPy
     img_array = np.array(image, dtype=np.int16)
     diff = img_array.max(axis=-1) - img_array.min(axis=-1)
     y_coords, x_coords = np.where(diff > 100)
@@ -39,24 +39,23 @@ def calculer_ph(image_decoupee):
     image_numpy = np.array(image_decoupee)
     moyenne_rgb = image_numpy.mean(axis=(0, 1)).reshape(1, -1)
     
-    # 2. On fait les deux prédictions
+    # On fait les deux prédictions
     ph_knn = round(float(modele_knn.predict(moyenne_rgb)[0]), 1)
     ph_vectors = round(float(modele_vectors.predict(moyenne_rgb)[0]), 1)
     
-    # On renvoie les deux valeurs
     return ph_knn, ph_vectors
 
 def main(page: ft.Page):
-    page.title = "IA pH Analyzer"
+    page.title = "pH Analyzer"
     page.horizontal_alignment = "center"
     page.theme_mode = "light"
     page.scroll = "auto"
 
-    titre = ft.Text("Testeur de pH par IA", size=30, weight="bold")
+    titre = ft.Text("Test de pH", size=30, weight="bold")
     
-    # 3. On crée deux lignes de texte pour les résultats
-    texte_resultat_knn = ft.Text("pH (Modèle KNN) : En attente...", size=18)
-    texte_resultat_vectors = ft.Text("pH (Modèle Vecteurs) : En attente...", size=18)
+    # On crée deux lignes de texte pour les résultats
+    texte_resultat_knn = ft.Text("pH Modèle KNN : En attente...", size=18)
+    texte_resultat_vectors = ft.Text("pH Modèle Vecteurs : En attente...", size=18)
     
     conteneur_image = ft.Container(width=300, height=300, border=ft.border.all(1, "grey"), border_radius=10)
 
@@ -68,7 +67,7 @@ def main(page: ft.Page):
                 code_image = base64.b64encode(image_file.read()).decode('utf-8')
             
             conteneur_image.content = ft.Image(src_base64=code_image, width=300, height=300, fit="contain")
-            texte_resultat_knn.value = "Analyse IA en cours..."
+            texte_resultat_knn.value = "Analyse en cours..."
             texte_resultat_vectors.value = "" # On vide la 2ème ligne pendant l'analyse
             page.update()
 
@@ -79,11 +78,11 @@ def main(page: ft.Page):
                 ph_knn, ph_vectors = calculer_ph(img)
                 
                 # On met à jour l'affichage KNN
-                texte_resultat_knn.value = f"pH ESTIMÉ (KNN) : {ph_knn}"
+                texte_resultat_knn.value = f"pH Modèle KNN : {ph_knn}"
                 texte_resultat_knn.color = "green" if 6 <= ph_knn <= 8 else "red"
                 
                 # On met à jour l'affichage Vecteurs
-                texte_resultat_vectors.value = f"pH ESTIMÉ (Vecteurs) : {ph_vectors}"
+                texte_resultat_vectors.value = f"pH Modèle Vecteurs : {ph_vectors}"
                 texte_resultat_vectors.color = "green" if 6 <= ph_vectors <= 8 else "red"
                 
             except Exception as err:
@@ -120,7 +119,6 @@ def main(page: ft.Page):
 
     bouton = ft.ElevatedButton("Prendre une photo", on_click=lambda _: selecteur.pick_files())
 
-    # 4. Ne pas oublier d'ajouter nos deux textes à la page finale !
     page.add(titre, bouton, conteneur_image, texte_resultat_knn, texte_resultat_vectors)
 
 port = int(os.environ.get("PORT", 8000))
