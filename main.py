@@ -4,6 +4,7 @@ from PIL import Image
 import joblib
 import os
 from urllib.parse import urlparse
+import base64
 
 #Mot de passe
 os.environ["FLET_SECRET_KEY"] = "super_cle_secrete_ph_123"
@@ -42,7 +43,13 @@ def main(page: ft.Page):
     def on_upload(e: ft.FilePickerUploadEvent):
         if e.progress == 1.0: 
             chemin_fichier = os.path.join("uploads", e.file_name)
-            conteneur_image.content = ft.Image(src=f"/{e.file_name}", width=300, height=300, fit="contain")
+            
+            # L'ASTUCE BASE64 : On lit l'image et on la convertit en texte
+            with open(chemin_fichier, "rb") as image_file:
+                code_image = base64.b64encode(image_file.read()).decode('utf-8')
+            
+            # On l'affiche direct sans passer par un lien !
+            conteneur_image.content = ft.Image(src_base64=code_image, width=300, height=300, fit="contain")
             texte_resultat.value = "Analyse IA en cours..."
             page.update()
 
@@ -52,7 +59,8 @@ def main(page: ft.Page):
                 texte_resultat.value = f"pH ESTIMÉ : {ph}"
                 texte_resultat.color = "green" if 6 <= ph <= 8 else "red"
             except Exception as err:
-                texte_resultat.value = f"Erreur : {err}"
+                texte_resultat.value = f"Erreur IA : {err}"
+                texte_resultat.color = "red"
             page.update()
 
     def on_result(e: ft.FilePickerResultEvent):
