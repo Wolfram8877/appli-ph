@@ -22,15 +22,8 @@ def recadrer_image(chemin_image):
     x_min, x_max, y_min, y_max = l, 0, h, 0
     seuil = 100 
 
-    for x in range(l):
-         for y in range(h):
-             r, g, b = pixels[x, y]
-             if max(r,g,b) - min(r,g,b) > seuil:
-                 x_min, x_max = min(x_min, x), max(x_max, x)
-                 y_min, y_max = min(y_min, y), max(y_max, y)
-
     centre_x, centre_y = int((x_min + x_max) / 2), int((y_min + y_max) / 2)
-    return image.crop((centre_x - 150, centre_y - 150, centre_x + 150, centre_y + 150))
+    return image.crop((centre_x - 100, centre_y - 150, centre_x + 100, centre_y + 150))
 
 def calculer_ph(image_decoupee):
     image_numpy = np.array(image_decoupee)
