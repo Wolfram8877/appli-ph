@@ -61,26 +61,36 @@ def main(page: ft.Page):
 
     def on_result(e: ft.FilePickerResultEvent):
         if e.files:
-            texte_resultat.value = "Envoi de la photo au serveur..."
-            page.update()
-            
-            # 1. Le lien buggé généré par le serveur (ex: http://0.0.0.0:8000/upload/...)
-            lien_original = page.get_upload_url(e.files[0].name, 60)
-            
-            # 2. On découpe ce lien pour ne garder que la partie utile (le chemin et le code secret)
-            chemin = urlparse(lien_original).path
-            signature = urlparse(lien_original).query
-            
-            # 3. On récupère la VRAIE adresse publique de ton site (ex: https://ton-app.onrender.com)
-            domaine_public = page.url.split('/#')[0].strip('/')
-            
-            # 4. On recolle les morceaux pour fabriquer le lien parfait
-            lien_parfait = f"{domaine_public}{chemin}?{signature}"
-            
-            # 5. On lance l'envoi !
-            selecteur.upload([
-                ft.FilePickerUploadFile(e.files[0].name, upload_url=lien_parfait)
-            ])
+            try:
+                # 1. Le lien buggé généré par le serveur
+                lien_original = page.get_upload_url(e.files[0].name, 60)
+                
+                # 2. On découpe pour garder le chemin (/upload/...) et la signature
+                from urllib.parse import urlparse
+                chemin = urlparse(lien_original).path
+                signature = urlparse(lien_original).query
+                
+                # 3. LE NETTOYAGE EXTRÊME : On récupère juste le domaine (sans http ni slash)
+                url_brute = page.url.split('/#')[0]
+                domaine_propre = url_brute.replace('http://', '').replace('https://', '').strip('/')
+                
+                # 4. ON FORCE LE HTTPS !
+                lien_parfait = f"https://{domaine_propre}{chemin}?{signature}"
+                
+                # On affiche sur le téléphone ce qu'on essaie de faire
+                texte_resultat.value = "Envoi HTTPS en cours..."
+                texte_resultat.color = "blue"
+                page.update()
+                
+                # 5. On lance l'envoi avec le lien blindé
+                selecteur.upload([
+                    ft.FilePickerUploadFile(e.files[0].name, upload_url=lien_parfait)
+                ])
+                
+            except Exception as err:
+                texte_resultat.value = f"Erreur de lien : {err}"
+                texte_resultat.color = "red"
+                page.update()
 
     selecteur = ft.FilePicker()
     selecteur.on_result = on_result
