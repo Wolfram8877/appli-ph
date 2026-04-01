@@ -191,4 +191,4 @@ def main(page: ft.Page):
     page.add(titre, bouton, conteneur_image, ligne_controles, texte_resultat_knn, texte_resultat_vectors, texte_resultat_RFR, texte_resultat_DTR)
 
 port = int(os.environ.get("PORT", 8000))
-ft.app(target=main, host="0.0.0.0", port=port, upload_dir="uploads", assets_dir="assets")
+ft.app(target=main, host="0.0.0.0", port=port, view=ft.AppView.WEB_BROWSER, upload_dir="uploads", assets_dir="assets")
