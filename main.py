@@ -125,11 +125,32 @@ def main(page: ft.Page):
             
         page.update()
 
+   # Boutons
     btn_haut = ft.IconButton(icon=ft.Icons.ARROW_UPWARD, on_click=lambda _: decaler_centre(0, -50), visible=False)
     btn_bas = ft.IconButton(icon=ft.Icons.ARROW_DOWNWARD, on_click=lambda _: decaler_centre(0, 50), visible=False)
     btn_gauche = ft.IconButton(icon=ft.Icons.ARROW_BACK, on_click=lambda _: decaler_centre(-50, 0), visible=False)
     btn_droite = ft.IconButton(icon=ft.Icons.ARROW_FORWARD, on_click=lambda _: decaler_centre(50, 0), visible=False)
     
+    ligne_controles = ft.Row([btn_gauche, btn_haut, btn_bas, btn_droite], alignment=ft.MainAxisAlignment.CENTER)
+
+    # --- GESTION DU CLAVIER ---
+    def on_keyboard(e: ft.KeyboardEvent):
+        # On verifie quelle touche a ete pressee et on decale le centre
+        if e.key == "Arrow Up":
+            decaler_centre(0, -50)
+        elif e.key == "Arrow Down":
+            decaler_centre(0, 50)
+        elif e.key == "Arrow Left":
+            decaler_centre(-50, 0)
+        elif e.key == "Arrow Right":
+            decaler_centre(50, 0)
+            
+    # Ecouteur d'evenements a la page
+    page.on_keyboard_event = on_keyboard
+    # ------------------------------------
+
+    def on_upload(e: ft.FilePickerUploadEvent):
+        # ... la suite de ton code ...
     ligne_controles = ft.Row([btn_gauche, btn_haut, btn_bas, btn_droite], alignment=ft.MainAxisAlignment.CENTER)
 
     def on_upload(e: ft.FilePickerUploadEvent):
