@@ -61,12 +61,12 @@ def main(page: ft.Page):
     page.scroll = "auto"
 
     # Affichage du logo
-titre = ft.Image(
-    src="icon.png", 
-    width=150, 
-    height=150,
-    fit=ft.ImageFit.CONTAIN
-)
+    titre = ft.Image(
+        src="icon.png", 
+        width=150, 
+        height=150,
+        fit=ft.ImageFit.CONTAIN
+    )
 
     # On crée 4 lignes de texte pour les résultats
     texte_resultat_knn = ft.Text("pH Modèle KNN : En attente...", size=18)
