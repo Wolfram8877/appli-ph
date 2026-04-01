@@ -115,10 +115,10 @@ def main(page: ft.Page):
         page.update()
 
     # Boutons de deplacement (masques par defaut)
-    btn_haut = ft.IconButton(icon=ft.icons.ARROW_UPWARD, on_click=lambda _: decaler_centre(0, -50), visible=False)
-    btn_bas = ft.IconButton(icon=ft.icons.ARROW_DOWNWARD, on_click=lambda _: decaler_centre(0, 50), visible=False)
-    btn_gauche = ft.IconButton(icon=ft.icons.ARROW_BACK, on_click=lambda _: decaler_centre(-50, 0), visible=False)
-    btn_droite = ft.IconButton(icon=ft.icons.ARROW_FORWARD, on_click=lambda _: decaler_centre(50, 0), visible=False)
+    btn_haut = ft.IconButton(icon=ft.Icons.ARROW_UPWARD, on_click=lambda _: decaler_centre(0, -50), visible=False)
+    btn_bas = ft.IconButton(icon=ft.Icons.ARROW_DOWNWARD, on_click=lambda _: decaler_centre(0, 50), visible=False)
+    btn_gauche = ft.IconButton(icon=ft.Icons.ARROW_BACK, on_click=lambda _: decaler_centre(-50, 0), visible=False)
+    btn_droite = ft.IconButton(icon=ft.Icons.ARROW_FORWARD, on_click=lambda _: decaler_centre(50, 0), visible=False)
     
     ligne_controles = ft.Row([btn_gauche, btn_haut, btn_bas, btn_droite], alignment=ft.MainAxisAlignment.CENTER)
 
