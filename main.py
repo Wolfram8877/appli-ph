@@ -60,8 +60,14 @@ def main(page: ft.Page):
     page.theme_mode = "light"
     page.scroll = "auto"
 
-    titre = ft.Text("pH'ocus", size=30, weight="bold")
-    
+    # Affichage du logo
+titre = ft.Image(
+    src="icon.png", 
+    width=150, 
+    height=150,
+    fit=ft.ImageFit.CONTAIN
+)
+
     # On crée 4 lignes de texte pour les résultats
     texte_resultat_knn = ft.Text("pH Modèle KNN : En attente...", size=18)
     texte_resultat_vectors = ft.Text("pH Modèle Vecteurs : En attente...", size=18)
