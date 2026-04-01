@@ -55,7 +55,7 @@ def calculer_ph(image_decoupee):
 #Fonction principale qui va gérer le comportement de l'application
 def main(page: ft.Page):
     # Affichage graphique
-    page.title = "pH Analyzer"
+    page.title = "pH'ocus"
     page.horizontal_alignment = "center"
     page.theme_mode = "light"
     page.scroll = "auto"
