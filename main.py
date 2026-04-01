@@ -18,10 +18,10 @@ modele_vectors = joblib.load('modele_vectors_ph.pkl')
 modele_RFR = joblib.load('modele_RFR_ph.pkl')
 modele_DTR = joblib.load('modele_DTR_ph.pkl')
 
-# --- NOUVELLE FONCTION D'OPTIMISATION ---
-def redimensionner_image(image_pil, max_size=800):
+# --- Fonction d'optimisation---
+def redimensionner_image(image_pil, max_size=2000):
     """
-    Reduit l'image si elle est trop grande (ex: photos 4K de smartphones),
+    Reduit l'image si elle est trop grande,
     tout en conservant ses proportions, et corrige l'orientation si besoin (EXIF).
     """
     # ImageOps.exif_transpose remet l'image a l'endroit (les telephones la tournent parfois)
