@@ -164,4 +164,4 @@ def main(page: ft.Page):
 
 # Lancement du service de serveur Render avec la gestion du port etc
 port = int(os.environ.get("PORT", 8000))
-ft.app(target=main, host="0.0.0.0", port=port, upload_dir="uploads")
+ft.app(target=main, host="0.0.0.0", port=port, upload_dir="uploads", assets_dir="assets")
