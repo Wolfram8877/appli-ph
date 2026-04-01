@@ -63,8 +63,8 @@ def main(page: ft.Page):
     # Affichage du logo
     titre = ft.Image(
         src="icon.png", 
-        width=150, 
-        height=150,
+        width=120, 
+        height=120,
         fit=ft.ImageFit.CONTAIN
     )
 
