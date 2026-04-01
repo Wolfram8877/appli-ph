@@ -60,7 +60,7 @@ def main(page: ft.Page):
     page.theme_mode = "light"
     page.scroll = "auto"
 
-    titre = ft.Text("Test de pH", size=30, weight="bold")
+    titre = ft.Text("pH'ocus", size=30, weight="bold")
     
     # On crée 4 lignes de texte pour les résultats
     texte_resultat_knn = ft.Text("pH Modèle KNN : En attente...", size=18)
