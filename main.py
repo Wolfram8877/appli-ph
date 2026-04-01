@@ -147,11 +147,6 @@ def main(page: ft.Page):
             
     # Ecouteur d'evenements a la page
     page.on_keyboard_event = on_keyboard
-    # ------------------------------------
-
-    def on_upload(e: ft.FilePickerUploadEvent):
-        # ... la suite de ton code ...
-    ligne_controles = ft.Row([btn_gauche, btn_haut, btn_bas, btn_droite], alignment=ft.MainAxisAlignment.CENTER)
 
     def on_upload(e: ft.FilePickerUploadEvent):
         if e.progress == 1.0: 
