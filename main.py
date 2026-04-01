@@ -1,11 +1,11 @@
 import flet as ft
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
 import joblib
 import os
 from urllib.parse import urlparse
 import base64
-import io  
+import io
 
 os.environ["FLET_SECRET_KEY"] = "super_cle_secrete_ph_123"
 
@@ -17,6 +17,17 @@ modele_knn = joblib.load('modele_knn_ph.pkl')
 modele_vectors = joblib.load('modele_vectors_ph.pkl')
 modele_RFR = joblib.load('modele_RFR_ph.pkl')
 modele_DTR = joblib.load('modele_DTR_ph.pkl')
+
+# --- NOUVELLE FONCTION D'OPTIMISATION ---
+def redimensionner_image(image_pil, max_size=800):
+    """
+    Reduit l'image si elle est trop grande (ex: photos 4K de smartphones),
+    tout en conservant ses proportions, et corrige l'orientation si besoin (EXIF).
+    """
+    # ImageOps.exif_transpose remet l'image a l'endroit (les telephones la tournent parfois)
+    img = ImageOps.exif_transpose(image_pil) 
+    img.thumbnail((max_size, max_size))
+    return img
 
 def trouver_centre(image_pil):
     img_array = np.array(image_pil.convert('RGB'), dtype=np.int16)
@@ -32,6 +43,7 @@ def trouver_centre(image_pil):
     return centre_x, centre_y
 
 def recadrer_image(image_pil, centre_x, centre_y): 
+    # Pour s'assurer qu'on ne sort pas des bords si on deplace trop le carre
     return image_pil.convert('RGB').crop((centre_x - 100, centre_y - 150, centre_x + 100, centre_y + 150))
     
 def calculer_ph(image_decoupee):
@@ -51,8 +63,8 @@ def main(page: ft.Page):
     page.theme_mode = "light"
     page.scroll = "auto"
 
-    # Dictionnaire pour garder en memoire le fichier et les coordonnees actuelles
-    etat_app = {"chemin_fichier": None, "cx": 0, "cy": 0}
+    # --- OPTIMISATION : On stocke directement l'objet Image en RAM, plus le chemin
+    etat_app = {"image_memoire": None, "cx": 0, "cy": 0}
 
     titre = ft.Image(
         src="icon.png", 
@@ -68,30 +80,29 @@ def main(page: ft.Page):
     
     conteneur_image = ft.Container(width=300, height=300, border=ft.border.all(1, "grey"), border_radius=10)
 
-    # Fonction qui deplace le carre, recalcule et met a jour l'affichage
     def decaler_centre(dx, dy):
-        if not etat_app["chemin_fichier"]:
+        # On verifie qu'une image est bien chargee en memoire
+        if etat_app["image_memoire"] is None:
             return
             
-        # Mise a jour des coordonnees
         etat_app["cx"] += dx
         etat_app["cy"] += dy
         
-        original_image = Image.open(etat_app["chemin_fichier"])
+        # --- OPTIMISATION : On utilise l'image deja en RAM
+        original_image = etat_app["image_memoire"]
         cx, cy = etat_app["cx"], etat_app["cy"]
         
-        # Redessiner le rectangle
         original_image_editable = original_image.copy()
         draw = ImageDraw.Draw(original_image_editable)
         coordonnees_boite = (cx - 100, cy - 150, cx + 100, cy + 150)
         draw.rectangle(coordonnees_boite, outline="red", width=5)
         
         buffer_img = io.BytesIO()
-        original_image_editable.save(buffer_img, format="PNG")
+        # On peut baisser un peu la qualite d'affichage (JPEG) pour accelerer le transfert Base64
+        original_image_editable.save(buffer_img, format="JPEG", quality=85)
         code_image = base64.b64encode(buffer_img.getvalue()).decode('utf-8')
         conteneur_image.content.src_base64 = code_image
         
-        # Recalculer le pH
         try:
             img_crop = recadrer_image(original_image, cx, cy)
             ph_knn, ph_vectors, ph_RFR, ph_DTR = calculer_ph(img_crop)
@@ -114,7 +125,6 @@ def main(page: ft.Page):
             
         page.update()
 
-    # Boutons de deplacement (masques par defaut)
     btn_haut = ft.IconButton(icon=ft.Icons.ARROW_UPWARD, on_click=lambda _: decaler_centre(0, -50), visible=False)
     btn_bas = ft.IconButton(icon=ft.Icons.ARROW_DOWNWARD, on_click=lambda _: decaler_centre(0, 50), visible=False)
     btn_gauche = ft.IconButton(icon=ft.Icons.ARROW_BACK, on_click=lambda _: decaler_centre(-50, 0), visible=False)
@@ -125,13 +135,20 @@ def main(page: ft.Page):
     def on_upload(e: ft.FilePickerUploadEvent):
         if e.progress == 1.0: 
             chemin_fichier = os.path.join("uploads", e.file_name)
-            original_image = Image.open(chemin_fichier)
             
-            # Enregistrement des informations initiales
-            etat_app["chemin_fichier"] = chemin_fichier
-            etat_app["cx"], etat_app["cy"] = trouver_centre(original_image)
+            # --- OPTIMISATION : On ouvre, on reduit la taille, et on stocke en RAM
+            image_brute = Image.open(chemin_fichier)
+            image_optimisee = redimensionner_image(image_brute)
             
-            # Affichage des boutons de controle
+            etat_app["image_memoire"] = image_optimisee
+            etat_app["cx"], etat_app["cy"] = trouver_centre(image_optimisee)
+            
+            # On peut meme supprimer le fichier physique pour economiser l'espace serveur
+            try:
+                os.remove(chemin_fichier)
+            except:
+                pass
+
             btn_haut.visible = True
             btn_bas.visible = True
             btn_gauche.visible = True
@@ -143,8 +160,6 @@ def main(page: ft.Page):
             texte_resultat_knn.value = "Analyse en cours..."
             texte_resultat_knn.color = "blue"
             
-            # On force la creation initiale du rectangle vide pour que l'UI se mette en place, 
-            # puis on appelle la fonction decaler_centre avec (0,0) pour faire le premier calcul sans rien bouger
             conteneur_image.content = ft.Image(src_base64="", width=300, height=300, fit="contain")
             page.update()
             
@@ -165,7 +180,6 @@ def main(page: ft.Page):
                 texte_resultat_RFR.value = ""
                 texte_resultat_DTR.value = ""
                 
-                # Masquer les boutons pendant le chargement d'une nouvelle photo
                 btn_haut.visible = False
                 btn_bas.visible = False
                 btn_gauche.visible = False
