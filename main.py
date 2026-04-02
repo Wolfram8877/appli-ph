@@ -78,7 +78,7 @@ def main(page: ft.Page):
     texte_resultat_RFR = ft.Text("pH Modele RFR : En attente...", size=18)
     texte_resultat_DTR = ft.Text("pH Modele DTR : En attente...", size=18)
     
-    conteneur_image = ft.Container(width=300, height=300, border=ft.border.all(1, "grey"), border_radius=10)
+    conteneur_image = ft.Container(width=300, height=250, border=ft.border.all(1, "grey"), border_radius=10)
 
     def decaler_centre(dx, dy):
         # On verifie qu'une image est bien chargee en memoire
