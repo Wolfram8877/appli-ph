@@ -69,7 +69,7 @@ def main(page: ft.Page):
     titre = ft.Image(
         src="icon.png", 
         width=300, 
-        height=120,
+        height=100,
         fit=ft.ImageFit.CONTAIN
     )
 
