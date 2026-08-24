@@ -2,7 +2,11 @@
 
 An automated machine learning application for precise pH prediction from colorimetric indicators. This tool bridges analytical chemistry and digital image processing to provide rapid, objective, and reproducible pH measurements directly from a smartphone or desktop.
 
-https://github.com/user-attachments/assets/placeholder-video-link
+
+
+https://github.com/user-attachments/assets/9877b209-b6b8-420b-ab6f-bb0ade26ad98
+
+
 
 ## The Problem
 <img width="364" height="383" alt="Capture d&#39;écran 2026-08-24 191756154" src="https://github.com/user-attachments/assets/bd1c0d7d-2bd5-4205-899a-0a836bc45fdd" />
